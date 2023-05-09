@@ -1,0 +1,3 @@
+[submodule "transputation"]
+	path = extern/transputation
+	url = git@github.com:james-choncholas/transputation.git
