@@ -93,6 +93,8 @@ jobs:
         with:
           envFile: '.github/constants.env'
 
+      - name: Install emp deps
+        run: sudo apt-get update && sudo apt-get install -y libgmp-dev libssl-dev libboost-all-dev libssl-dev xxd
 
       - name: Setup Cpp
         uses: aminya/setup-cpp@v1
