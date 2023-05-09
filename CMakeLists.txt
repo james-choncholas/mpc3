@@ -30,28 +30,33 @@ execute_process(COMMAND make
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation/")
 execute_process(COMMAND make install
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation/")
-set(Transputation_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation")
-include_directories("${Transputation_DIR}/src")
+find_path(TRANSPUTATION_INCLUDE_DIR NAMES src/transputation.h)
+find_library(TRANSPUTATION_LIBRARY NAMES transputation)
+add_library(transputation SHARED IMPORTED)
+set_target_properties(transputation PROPERTIES
+  IMPORTED_LOCATION "${TRANSPUTATION_LIBRARY}"
+)
+#include_directories(SYSTEM "${Transputation_DIR}/src")
 
 
-foreach(empdir tool ot sh2pc)
-#    execute_process(COMMAND rm -rf build/
-#        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-#    execute_process(COMMAND rm -rf CMakeCache.txt
-#        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-#    execute_process(COMMAND make clean
-#        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-    execute_process(COMMAND cmake -DENABLE_FLOAT=On -DTHREADING=On .
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-    execute_process(COMMAND make -j16
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-    execute_process(COMMAND make install
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-endforeach()
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
-find_package(emp-tool REQUIRED)
+foreach(empdir tool)
+#  execute_process(COMMAND rm -rf build/
+#    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+#  execute_process(COMMAND rm -rf CMakeCache.txt
+#    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+#  execute_process(COMMAND make clean
+#    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+  execute_process(COMMAND cmake -DENABLE_FLOAT=On -DTHREADING=On .
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+  execute_process(COMMAND make -j16
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+  execute_process(COMMAND make install
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+  include_directories(SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+  find_package("emp-${empdir}" REQUIRED)
+endforeach()
 #include(${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-sh2pc/cmake/emp-sh2pc-config.cmake)
 
 
@@ -133,7 +138,8 @@ include(cmake/PackageProject.cmake)
 # we know we want to ship
 mpc3_package_project(
   TARGETS
-  intro
+  stan_bench
+  #intro
   mpc3_options
   mpc3_warnings
   # FIXME: this does not work! CK
