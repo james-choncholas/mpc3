@@ -37,12 +37,9 @@ find_path(TRANSPUTATION_INCLUDE_DIR
 find_path(TRANSPUTATION_LIBRARY
   NAMES libtransputation.so PATHS "${TRANSPROJ_DIR}/transputation"
   REQUIRED NO_CACHE)
-#find_library(TRANSPUTATION_LIBRARY transputation "${TRANSPROJ_DIR}")
-message(AUTHOR_WARNING " the includes are here: ${TRANSPUTATION_INCLUDE_DIR}")
-message(AUTHOR_WARNING " the library is here: ${TRANSPUTATION_LIBRARY}")
 add_library(transputation SHARED IMPORTED)
-set_target_properties(transputation PROPERTIES IMPORTED_LOCATION "${TRANSPUTATION_LIBRARY}")
-include_directories(SYSTEM "${TRANSPUTATION_INCLUDE_DIR}")
+set_target_properties(transputation PROPERTIES IMPORTED_LOCATION "${TRANSPUTATION_LIBRARY}/libtransputation.so")
+include_directories(SYSTEM "${TRANSPUTATION_INCLUDE_DIR}/..")
 
 
 find_package(OpenSSL REQUIRED)
