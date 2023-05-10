@@ -32,10 +32,10 @@ execute_process(COMMAND make
 # execute_process(COMMAND sudo make install
 #    WORKING_DIRECTORY "${TRANSPROJ_DIR}")
 find_path(TRANSPUTATION_INCLUDE_DIR
-  NAMES transputation.h PATHS "${TRANSPROJ_DIR}/src"
+  NAMES transputation.h PATHS "${TRANSPROJ_DIR}/transputation"
   REQUIRED NO_CACHE)
 find_path(TRANSPUTATION_LIBRARY
-  NAMES libtransputation.so PATHS "${TRANSPROJ_DIR}/src"
+  NAMES libtransputation.so PATHS "${TRANSPROJ_DIR}/transputation"
   REQUIRED NO_CACHE)
 #find_library(TRANSPUTATION_LIBRARY transputation "${TRANSPROJ_DIR}")
 message(AUTHOR_WARNING " the includes are here: ${TRANSPUTATION_INCLUDE_DIR}")
