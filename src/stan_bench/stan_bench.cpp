@@ -7,12 +7,13 @@
 #include <vector>
 
 #include <CLI/CLI.hpp>
+#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
+
 
 #include <emp-tool/emp-tool.h>
 #include <internal_use_only/config.hpp>
 #include <transputation/transputation.h>
-
 
 namespace mpc3 {
 
@@ -21,16 +22,28 @@ constexpr const int _kStartPort = 8181;
 constexpr const size_t _kBDP = 125000;
 
 template<typename T>
-void connectionThread(T *arr, size_t num_elements, const bool is_sender, std::string const &ip_addr, int port)
+long connectionThread(T *arr, size_t num_elements, const bool isSender, std::string const &ipAddr, int port)
 {
-  if (is_sender) {
+  time_point<high_resolution_clock> tic;
+  if (isSender) {
     auto io = std::make_unique<emp::NetIO>(nullptr, port);
+    tic = high_resolution_clock::now();
     io->send_data(arr, num_elements * sizeof(T));
     io->flush();
   } else {
-    auto io = std::make_unique<emp::NetIO>(ip_addr.c_str(), port);
+    auto io = std::make_unique<emp::NetIO>(ipAddr.c_str(), port);
+    tic = high_resolution_clock::now();
     io->recv_data(arr, num_elements * sizeof(T));
   }
+
+  auto toc = high_resolution_clock::now();
+  long us = 0;
+  if (tic > toc) {
+    spdlog::error("emp timer overflowed in {}", __func__);
+  } else {
+    us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
+  }
+  return us;
 }
 
 size_t computeNumberOfThreads(size_t material_size, size_t bandwidth_delay_product)
@@ -38,7 +51,11 @@ size_t computeNumberOfThreads(size_t material_size, size_t bandwidth_delay_produ
   return static_cast<size_t>(ceil(static_cast<double>(material_size) / static_cast<double>(bandwidth_delay_product)));
 }
 
-template<typename T> void multiSocketTransfer(std::vector<T> &arr, const bool is_sender, std::string const &ip_addr)
+template<typename T>
+void multiSocketTransfer(std::string const &ipAddr,
+  const bool isSender,
+  std::string const &funcName,
+  std::vector<T> &arr)
 {
   size_t material_size = arr.size() * sizeof(T);
   // Now we will form as many connections to maximize the throughput
@@ -49,13 +66,13 @@ template<typename T> void multiSocketTransfer(std::vector<T> &arr, const bool is
   // TODO In emp's net_io_channel (or system wide), ensure both the sender and receiver buffers are 2 *
   // bandwidth_delay_product (as linux assumes half the buffers is used for internal kernel structures)
 
-  std::vector<std::thread> threads;
+  std::vector<std::future<long>> threads;
   size_t start_idx = 0;
   size_t offset = num_connections == 1 ? arr.size() : _kBDP / sizeof(T);
 
   for (size_t idx = 0; idx < num_connections; idx++) {
     int curr_port = _kStartPort + static_cast<int>(idx) + 1;
-    threads.push_back(std::thread(connectionThread<T>, &arr[start_idx], offset, is_sender, ip_addr, curr_port));
+    threads.push_back(std::async(connectionThread<T>, &arr[start_idx], offset, isSender, ipAddr, curr_port));
     start_idx += offset;
     if ((start_idx + offset) > arr.size() && idx != (num_connections - 1)) {
       offset = arr.size() - start_idx;
@@ -64,68 +81,69 @@ template<typename T> void multiSocketTransfer(std::vector<T> &arr, const bool is
     }
   }
 
-  for_each(threads.begin(), threads.end(), mem_fn(&std::thread::join));
-}
-
-template<typename T> void singleSocketTransfer(std::vector<T> &arr, const bool is_sender, std::string const &ip_addr)
-{
-  connectionThread<T>(&arr[0], arr.size(), is_sender, ip_addr, _kStartPort);
+  long us =
+    std::accumulate(threads.begin(), threads.end(), 0, [](long sum, auto &thread) { return sum + thread.get(); });
+  spdlog::info("emp multi-socket transfer took {}", us);
+  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, us, arr.size() * sizeof(T));
 }
 
 template<typename T>
-void transputationTcpTransfer(std::vector<T> &arr, const bool is_sender, std::string const &ip_addr)
+void singleSocketTransfer(std::string const &ipAddr,
+  const bool isSender,
+  std::string const &funcName,
+  std::vector<T> &arr)
+{
+  auto us = connectionThread<T>(&arr[0], arr.size(), isSender, ipAddr, _kStartPort);
+  spdlog::info("emp single socket transfer took {}", us);
+  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, us, arr.size() * sizeof(T));
+}
+
+template<typename T>
+void transputationTransfer(std::string const &ipAddr,
+  const bool isSender,
+  std::string const &transport,
+  std::vector<T> &arr)
 {
   using namespace transputation;
 
   auto material_size = static_cast<uint32_t>(arr.size() * sizeof(T));
   auto *rawp = static_cast<uint8_t *>(static_cast<void *>(arr.data()));
-  auto t = std::unique_ptr<Transport>(Transport::GetTransport("TCP"));
+  auto t = std::unique_ptr<Transport>(Transport::GetTransport(transport.c_str()));
 
-  if (is_sender) {
-    t->SetupClient(ip_addr.c_str(), _kStartPort);
+  time_point<high_resolution_clock> tic;
+  if (isSender) {
+    t->SetupClient(ipAddr.c_str(), _kStartPort);
     const int shitsleep = 100;// Connect calls exit(1) if server not ready :(
     std::this_thread::sleep_for(std::chrono::milliseconds(shitsleep));
     t->Connect();
+    tic = high_resolution_clock::now();
     t->SendRaw(material_size, rawp);
-    t->Close();
   } else {
     t->SetupServer("0.0.0.0", _kStartPort);
     t->Accept();
+    tic = high_resolution_clock::now();
     t->RecvRaw(material_size, rawp);
   }
   t->Close();
+
+  auto toc = high_resolution_clock::now();
+  long us = 0;
+  if (tic > toc) {
+    spdlog::error("emp timer overflowed in {}", __func__);
+  } else {
+    us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
+  }
+  spdlog::info("transputation {} transfer took {}", transport, us);
+  spdlog::get("results")->info("transputation,{},{},us,{},B,", transport, us, arr.size() * sizeof(T));
 }
 
 template<typename T>
-void transputationUdtTransfer(std::vector<T> &arr, const bool is_sender, std::string const &ip_addr)
-{
-  using namespace transputation;
-
-  auto material_size = static_cast<uint32_t>(arr.size() * sizeof(T));
-  auto *rawp = static_cast<uint8_t *>(static_cast<void *>(arr.data()));
-  auto t = std::unique_ptr<Transport>(Transport::GetTransport("UDT"));
-
-  if (is_sender) {
-    t->SetupClient(ip_addr.c_str(), _kStartPort);
-    const int shitsleep = 100;// Connect calls exit(1) if server not ready :(
-    std::this_thread::sleep_for(std::chrono::milliseconds(shitsleep));
-    t->Connect();
-    t->SendRaw(material_size, rawp);
-    t->Close();
-  } else {
-    t->SetupServer("0.0.0.0", _kStartPort);
-    t->Accept();
-    t->RecvRaw(material_size, rawp);
-  }
-  t->Close();
-}
-
-template<typename T> void testTransfer(bool is_sender, std::string const &ip_addr, auto testFunc)
+void testTransfer(auto testFunc, std::string const &ipAddr, bool isSender, std::string const &funcName)
 {
   const size_t length = 1000000;
   const T initValue = 1;
   std::vector<T> arr;
-  if (is_sender) {
+  if (isSender) {
     // Initialize the vector
     arr = std::vector<T>(length, initValue);
   } else {
@@ -134,7 +152,7 @@ template<typename T> void testTransfer(bool is_sender, std::string const &ip_add
   }
 
   spdlog::info("test started");
-  testFunc(arr, is_sender, ip_addr);
+  testFunc(ipAddr, isSender, funcName, arr);
   spdlog::info("test finished");
 
   if (std::any_of(arr.begin(), arr.end(), [&](T x) { return x != initValue; })) {
@@ -153,16 +171,16 @@ int main(int argc, char **argv)
     bool show_version = false;
     app.add_flag("--version", show_version, "Show version information");
 
-    bool is_sender = false;
-    auto *sender_flag = app.add_flag("-s,--sender", is_sender);
+    bool isSender = false;
+    auto *sender_flag = app.add_flag("-s,--sender", isSender);
 
-    std::string ip_addr(mpc3::_kAddr);
-    auto *addr_option = app.add_option("-a,--address", ip_addr, "Address to send to");
+    std::string ipAddr(mpc3::_kAddr);
+    auto *addr_option = app.add_option("-a,--address", ipAddr, "Address to send to");
     addr_option->expected(1);
     addr_option->default_str(mpc3::_kAddr);
 
-    bool is_receiver = false;
-    auto *receiver_flag = app.add_flag("-r,--receiver", is_receiver);
+    bool isReceiver = false;
+    auto *receiver_flag = app.add_flag("-r,--receiver", isReceiver);
 
     sender_flag->excludes(receiver_flag);
     receiver_flag->excludes(sender_flag);
@@ -174,17 +192,25 @@ int main(int argc, char **argv)
       return EXIT_SUCCESS;
     }
 
-    if (is_sender == is_receiver) {
+    if (isSender == isReceiver) {
       spdlog::error("must set either --sender or --receiver");
       return EXIT_FAILURE;
     }
 
-    if (is_sender) { spdlog::info("sending to {}", ip_addr); }
+    if (isSender) { spdlog::info("sending to ip {}", ipAddr); }
 
-    mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::multiSocketTransfer<double>);
-    mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::singleSocketTransfer<double>);
-    mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::transputationTcpTransfer<double>);
-    mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::transputationUdtTransfer<double>);
+    try {
+      auto logfile = fmt::format("results-{}-{}.result", isSender ? "sender" : "receiver", mpc3::cmake::git_sha);
+      auto logger = spdlog::basic_logger_mt("results", logfile);
+      logger->set_pattern("%v");
+    } catch (const spdlog::spdlog_ex &ex) {
+      spdlog::error("Log init failed: {}", ex.what());
+    }
+
+    mpc3::testTransfer<double>(mpc3::multiSocketTransfer<double>, ipAddr, isSender, "empss");
+    mpc3::testTransfer<double>(mpc3::singleSocketTransfer<double>, ipAddr, isSender, "empms");
+    mpc3::testTransfer<double>(mpc3::transputationTransfer<double>, ipAddr, isSender, "TCP");
+    mpc3::testTransfer<double>(mpc3::transputationTransfer<double>, ipAddr, isSender, "UDT");
 
   } catch (const std::exception &e) {
     spdlog::error("Unhandled exception in main: {}", e.what());
