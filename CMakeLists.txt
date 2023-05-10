@@ -26,17 +26,23 @@ include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
 
+set(TRANSPROJ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation/")
 execute_process(COMMAND make
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation/")
-execute_process(COMMAND sudo make install
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation/")
-find_path(TRANSPUTATION_INCLUDE_DIR NAMES src/transputation.h)
-find_library(TRANSPUTATION_LIBRARY NAMES transputation)
+    WORKING_DIRECTORY "${TRANSPROJ_DIR}")
+# execute_process(COMMAND sudo make install
+#    WORKING_DIRECTORY "${TRANSPROJ_DIR}")
+find_path(TRANSPUTATION_INCLUDE_DIR
+  NAMES transputation.h PATHS "${TRANSPROJ_DIR}/src"
+  REQUIRED NO_CACHE)
+find_path(TRANSPUTATION_LIBRARY
+  NAMES libtransputation.so PATHS "${TRANSPROJ_DIR}/src"
+  REQUIRED NO_CACHE)
+#find_library(TRANSPUTATION_LIBRARY transputation "${TRANSPROJ_DIR}")
+message(AUTHOR_WARNING " the includes are here: ${TRANSPUTATION_INCLUDE_DIR}")
+message(AUTHOR_WARNING " the library is here: ${TRANSPUTATION_LIBRARY}")
 add_library(transputation SHARED IMPORTED)
-set_target_properties(transputation PROPERTIES
-  IMPORTED_LOCATION "${TRANSPUTATION_LIBRARY}"
-)
-#include_directories(SYSTEM "${Transputation_DIR}/src")
+set_target_properties(transputation PROPERTIES IMPORTED_LOCATION "${TRANSPUTATION_LIBRARY}")
+include_directories(SYSTEM "${TRANSPUTATION_INCLUDE_DIR}")
 
 
 find_package(OpenSSL REQUIRED)
