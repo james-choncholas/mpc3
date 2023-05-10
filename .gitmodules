@@ -1,6 +1,6 @@
-[submodule "extern/transputation"]
-	path = extern/transputation
-	url = git@github.com:james-choncholas/transputation.git
 [submodule "extern/emp-tool"]
 	path = extern/emp-tool
 	url = git@github.com:emp-toolkit/emp-tool.git
+[submodule "extern/transputation"]
+	path = extern/transputation
+	url = git@github.com:james-choncholas/transputation.git
