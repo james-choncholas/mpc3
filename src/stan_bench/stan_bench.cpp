@@ -96,6 +96,30 @@ void transputationTcpTransfer(std::vector<T> &arr, const bool is_sender, std::st
   t->Close();
 }
 
+template<typename T>
+void transputationUdtTransfer(std::vector<T> &arr, const bool is_sender, std::string const &ip_addr)
+{
+  using namespace transputation;
+
+  auto material_size = static_cast<uint32_t>(arr.size() * sizeof(T));
+  auto *rawp = static_cast<uint8_t *>(static_cast<void *>(arr.data()));
+  auto t = std::unique_ptr<Transport>(Transport::GetTransport("UDT"));
+
+  if (is_sender) {
+    t->SetupClient(ip_addr.c_str(), _kStartPort);
+    const int shitsleep = 100;// Connect calls exit(1) if server not ready :(
+    std::this_thread::sleep_for(std::chrono::milliseconds(shitsleep));
+    t->Connect();
+    t->SendRaw(material_size, rawp);
+    t->Close();
+  } else {
+    t->SetupServer("0.0.0.0", _kStartPort);
+    t->Accept();
+    t->RecvRaw(material_size, rawp);
+  }
+  t->Close();
+}
+
 template<typename T> void testTransfer(bool is_sender, std::string const &ip_addr, auto testFunc)
 {
   const size_t length = 1000000;
@@ -160,6 +184,7 @@ int main(int argc, char **argv)
     mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::multiSocketTransfer<double>);
     mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::singleSocketTransfer<double>);
     mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::transputationTcpTransfer<double>);
+    mpc3::testTransfer<double>(is_sender, ip_addr, mpc3::transputationUdtTransfer<double>);
 
   } catch (const std::exception &e) {
     spdlog::error("Unhandled exception in main: {}", e.what());
