@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -20,6 +21,8 @@ namespace mpc3 {
 constexpr const char *_kAddr = "127.0.0.1";
 constexpr const int _kStartPort = 8181;
 constexpr const size_t _kBDP = 125000;
+constexpr const size_t _kTransferMin = 1e6;
+constexpr const int _kTransferSteps = 4;
 
 template<typename T>
 long connectionThread(T *arr, size_t num_elements, const bool isSender, std::string const &ipAddr, int port)
@@ -57,10 +60,12 @@ void multiSocketTransfer(std::string const &ipAddr,
   std::string const &funcName,
   std::vector<T> &arr)
 {
+  constexpr const unsigned long maxThreads = 64UL;
   size_t material_size = arr.size() * sizeof(T);
   // Now we will form as many connections to maximize the throughput
   // ceiling of (material_size / bandwidth_delay_product)
   size_t num_connections = computeNumberOfThreads(material_size, _kBDP);
+  num_connections = std::min(num_connections, maxThreads);
   std::cout << "Number of Connections: " << num_connections << std::endl;
 
   // TODO In emp's net_io_channel (or system wide), ensure both the sender and receiver buffers are 2 *
@@ -138,22 +143,23 @@ void transputationTransfer(std::string const &ipAddr,
 }
 
 template<typename T>
-void testTransfer(auto testFunc, std::string const &ipAddr, bool isSender, std::string const &funcName)
+void testTransfer(auto testFunc,
+  std::string const &ipAddr,
+  bool isSender,
+  std::string const &funcName,
+  size_t transferSz)
 {
-  const size_t length = 1000000;
   const T initValue = 1;
   std::vector<T> arr;
   if (isSender) {
     // Initialize the vector
-    arr = std::vector<T>(length, initValue);
+    arr = std::vector<T>(transferSz, initValue);
   } else {
     // set to zero and check if recv correctly afterwords
-    arr = std::vector<T>(length, 0);
+    arr = std::vector<T>(transferSz, 0);
   }
 
-  spdlog::info("test started");
   testFunc(ipAddr, isSender, funcName, arr);
-  spdlog::info("test finished");
 
   if (std::any_of(arr.begin(), arr.end(), [&](T x) { return x != initValue; })) {
     spdlog::error("arr[0] = {}", arr[0]);
@@ -207,10 +213,14 @@ int main(int argc, char **argv)
       spdlog::error("Log init failed: {}", ex.what());
     }
 
-    mpc3::testTransfer<double>(mpc3::multiSocketTransfer<double>, ipAddr, isSender, "empss");
-    mpc3::testTransfer<double>(mpc3::singleSocketTransfer<double>, ipAddr, isSender, "empms");
-    mpc3::testTransfer<double>(mpc3::transputationTransfer<double>, ipAddr, isSender, "TCP");
-    mpc3::testTransfer<double>(mpc3::transputationTransfer<double>, ipAddr, isSender, "UDT");
+    using namespace mpc3;
+    for (auto i = 0; i < _kTransferSteps; ++i) {
+      size_t transferSz = _kTransferMin * i;
+      testTransfer<double>(multiSocketTransfer<double>, ipAddr, isSender, "empss", transferSz);
+      testTransfer<double>(singleSocketTransfer<double>, ipAddr, isSender, "empms", transferSz);
+      testTransfer<double>(transputationTransfer<double>, ipAddr, isSender, "TCP", transferSz);
+      testTransfer<double>(transputationTransfer<double>, ipAddr, isSender, "UDT", transferSz);
+    }
 
   } catch (const std::exception &e) {
     spdlog::error("Unhandled exception in main: {}", e.what());
