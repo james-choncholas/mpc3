@@ -1,9 +1,0 @@
-**.o
-**.so
-**.a
-test_client
-test_client_double
-test_client_raw
-test_server
-test_server_double
-test_server_raw
