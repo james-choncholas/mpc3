@@ -28,7 +28,7 @@ include(ProjectOptions.cmake)
 
 execute_process(COMMAND make
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation/")
-execute_process(COMMAND make install
+execute_process(COMMAND sudo make install
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/transputation/")
 find_path(TRANSPUTATION_INCLUDE_DIR NAMES src/transputation.h)
 find_library(TRANSPUTATION_LIBRARY NAMES transputation)
@@ -41,23 +41,24 @@ set_target_properties(transputation PROPERTIES
 
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
-foreach(empdir tool)
+foreach(empproj tool)
+  set("empproj_DIR" "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empproj}")
 #  execute_process(COMMAND rm -rf build/
-#    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+#    WORKING_DIRECTORY "${empproj_DIR}")
 #  execute_process(COMMAND rm -rf CMakeCache.txt
-#    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+#    WORKING_DIRECTORY "${empproj_DIR}")
 #  execute_process(COMMAND make clean
-#    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+#    WORKING_DIRECTORY "${empproj_DIR}")
   execute_process(COMMAND cmake -DENABLE_FLOAT=On -DTHREADING=On .
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
+    WORKING_DIRECTORY "${empproj_DIR}")
   execute_process(COMMAND make -j16
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-  execute_process(COMMAND make install
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-  include_directories(SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empdir}")
-  find_package("emp-${empdir}" REQUIRED)
+    WORKING_DIRECTORY "${empproj_DIR}")
+  execute_process(COMMAND sudo make install
+    WORKING_DIRECTORY "${empproj_DIR}")
+  include_directories(SYSTEM "${empproj_DIR}")
+  set("emp-${empproj}_DIR" "${empproj_DIR}/cmake")
+  find_package("emp-${empproj}" REQUIRED)
 endforeach()
-#include(${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-sh2pc/cmake/emp-sh2pc-config.cmake)
 
 
 mpc3_setup_options()
