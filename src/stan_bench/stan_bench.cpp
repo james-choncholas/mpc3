@@ -22,7 +22,7 @@ constexpr const char *_kAddr = "127.0.0.1";
 constexpr const int _kStartPort = 8181;
 constexpr const size_t _kBDP = 125000;
 constexpr const size_t _kTransferMin = 1e6;
-constexpr const int _kTransferSteps = 4;
+constexpr const size_t _kTransferSteps = 4;
 
 template<typename T>
 long connectionThread(T *arr, size_t num_elements, const bool isSender, std::string const &ipAddr, int port)
@@ -60,12 +60,10 @@ void multiSocketTransfer(std::string const &ipAddr,
   std::string const &funcName,
   std::vector<T> &arr)
 {
-  constexpr const unsigned long maxThreads = 64UL;
   size_t material_size = arr.size() * sizeof(T);
   // Now we will form as many connections to maximize the throughput
   // ceiling of (material_size / bandwidth_delay_product)
   size_t num_connections = computeNumberOfThreads(material_size, _kBDP);
-  num_connections = std::min(num_connections, maxThreads);
   std::cout << "Number of Connections: " << num_connections << std::endl;
 
   // TODO In emp's net_io_channel (or system wide), ensure both the sender and receiver buffers are 2 *
@@ -162,7 +160,12 @@ void testTransfer(auto testFunc,
   testFunc(ipAddr, isSender, funcName, arr);
 
   if (std::any_of(arr.begin(), arr.end(), [&](T x) { return x != initValue; })) {
-    spdlog::error("arr[0] = {}", arr[0]);
+    size_t i = 0;
+    for (i = 0; i < arr.size(); ++i) {
+      if (arr[i] != initValue) { break; }
+    }
+
+    spdlog::error("first index with mismatch: arr[{}] = {}", i, arr[i]);
     throw std::ios_base::failure("corrupted data after transmission");
   }
 }
@@ -214,7 +217,7 @@ int main(int argc, char **argv)
     }
 
     using namespace mpc3;
-    for (auto i = 0; i < _kTransferSteps; ++i) {
+    for (size_t i = 1; i <= _kTransferSteps; ++i) {
       size_t transferSz = _kTransferMin * i;
       testTransfer<double>(multiSocketTransfer<double>, ipAddr, isSender, "empss", transferSz);
       testTransfer<double>(singleSocketTransfer<double>, ipAddr, isSender, "empms", transferSz);
