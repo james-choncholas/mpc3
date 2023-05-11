@@ -38,12 +38,12 @@ long connectionThread(T *arr, size_t num_elements, const bool isSender, std::str
 {
   time_point<high_resolution_clock> tic;
   if (isSender) {
-    auto netio = std::make_unique<emp::NetIO>(nullptr, port);
+    auto netio = std::make_unique<emp::NetIO>(ipAddr.c_str(), port);
     tic = high_resolution_clock::now();
     netio->send_data(arr, num_elements * sizeof(T));
     netio->flush();
   } else {
-    auto netio = std::make_unique<emp::NetIO>(ipAddr.c_str(), port);
+    auto netio = std::make_unique<emp::NetIO>(nullptr, port);
     tic = high_resolution_clock::now();
     netio->recv_data(arr, num_elements * sizeof(T));
   }
