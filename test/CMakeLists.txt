@@ -34,7 +34,7 @@ target_link_libraries(
   tests
   PRIVATE mpc3::mpc3_warnings
           mpc3::mpc3_options
-          mpc3::sample_library
+          mpc3::net_bench_lib
           Catch2::Catch2WithMain)
 
 # automatically discover tests that are defined in catch based test files you can modify the unittests. Set TEST_PREFIX
@@ -58,7 +58,7 @@ target_link_libraries(
   constexpr_tests
   PRIVATE mpc3::mpc3_warnings
           mpc3::mpc3_options
-          mpc3::sample_library
+          mpc3::net_bench_lib
           Catch2::Catch2WithMain)
 
 catch_discover_tests(
@@ -81,7 +81,7 @@ target_link_libraries(
   relaxed_constexpr_tests
   PRIVATE mpc3::mpc3_warnings
           mpc3::mpc3_options
-          mpc3::sample_library
+          mpc3::net_bench_lib
           Catch2::Catch2WithMain)
 target_compile_definitions(relaxed_constexpr_tests PRIVATE -DCATCH_CONFIG_RUNTIME_STATIC_REQUIRE)
 

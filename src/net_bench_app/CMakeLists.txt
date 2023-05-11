@@ -1,14 +1,15 @@
-add_executable(stan_bench stan_bench.cpp)
+add_executable(net_bench_app net_bench_app.cpp)
 
 target_link_libraries(
-  stan_bench
+  net_bench_app
   PRIVATE 
+    net_bench_lib
     transputation
     mpc3::mpc3_options
     mpc3::mpc3_warnings)
 
 target_link_system_libraries(
-  stan_bench
+  net_bench_app
   PRIVATE
     pthread
     CLI11::CLI11
@@ -16,4 +17,4 @@ target_link_system_libraries(
     spdlog::spdlog
     lefticus::tools)
 
-target_include_directories(stan_bench PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
+target_include_directories(net_bench_app PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")

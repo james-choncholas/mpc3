@@ -1,4 +1,4 @@
-#include <mpc3/sample_library.hpp>
+#include <mpc3/net_bench_lib.hpp>
 
 int factorial(int input) noexcept
 {

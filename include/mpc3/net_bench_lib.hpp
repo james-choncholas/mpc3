@@ -1,9 +1,9 @@
-#ifndef SAMPLE_LIBRARY_HPP
-#define SAMPLE_LIBRARY_HPP
+#ifndef NET_BENCH_LIB_HPP
+#define NET_BENCH_LIB_HPP
 
-#include <mpc3/sample_library_export.hpp>
+#include <mpc3/net_bench_lib_export.hpp>
 
-[[nodiscard]] SAMPLE_LIBRARY_EXPORT int factorial(int) noexcept;
+[[nodiscard]] NET_BENCH_LIB_EXPORT int factorial(int) noexcept;
 
 [[nodiscard]] constexpr int factorial_constexpr(int input) noexcept
 {

@@ -131,7 +131,7 @@ include(cmake/PackageProject.cmake)
 # we know we want to ship
 mpc3_package_project(
   TARGETS
-  stan_bench
+  net_bench_app
   #intro
   mpc3_options
   mpc3_warnings

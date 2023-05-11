@@ -1,2 +1,2 @@
-add_subdirectory(sample_library)
-add_subdirectory(stan_bench)
+add_subdirectory(net_bench_lib)
+add_subdirectory(net_bench_app)
