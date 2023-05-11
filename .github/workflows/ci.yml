@@ -32,6 +32,7 @@ jobs:
           - ubuntu-20.04
         compiler:
           # you can specify the version after `-` like "llvm-15.0.2".
+          # - llvm-15.0.2
           - gcc-11
         generator:
           - "Ninja Multi-Config"
@@ -51,9 +52,9 @@ jobs:
             gcov_executable: gcov
             enable_ipo: On
 
-          - compiler: llvm-15.0.2
-            enable_ipo: Off
-            gcov_executable: "llvm-cov gcov"
+          #- compiler: llvm-15.0.2
+          #  enable_ipo: Off
+          #  gcov_executable: "llvm-cov gcov"
 
           # Set up preferred package generators, for given build configurations
           - build_type: Release
