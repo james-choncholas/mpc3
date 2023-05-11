@@ -46,21 +46,22 @@ find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 foreach(empproj tool)
   set("empproj_DIR" "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empproj}")
-#  execute_process(COMMAND rm -rf build/
-#    WORKING_DIRECTORY "${empproj_DIR}")
-#  execute_process(COMMAND rm -rf CMakeCache.txt
-#    WORKING_DIRECTORY "${empproj_DIR}")
-#  execute_process(COMMAND make clean
-#    WORKING_DIRECTORY "${empproj_DIR}")
-  execute_process(COMMAND cmake -DENABLE_FLOAT=On -DTHREADING=On .
-    WORKING_DIRECTORY "${empproj_DIR}")
-  execute_process(COMMAND make -j16
-    WORKING_DIRECTORY "${empproj_DIR}")
-  execute_process(COMMAND sudo make install
-    WORKING_DIRECTORY "${empproj_DIR}")
+  ## execute_process(COMMAND rm -rf build/
+  ##   WORKING_DIRECTORY "${empproj_DIR}")
+  ## execute_process(COMMAND rm -rf CMakeCache.txt
+  ##   WORKING_DIRECTORY "${empproj_DIR}")
+  ## execute_process(COMMAND make clean
+  ##   WORKING_DIRECTORY "${empproj_DIR}")
+  #execute_process(COMMAND cmake -DENABLE_FLOAT=On -DTHREADING=On .
+  #  WORKING_DIRECTORY "${empproj_DIR}")
+  #execute_process(COMMAND make -j16
+  #  WORKING_DIRECTORY "${empproj_DIR}")
+  ## execute_process(COMMAND sudo make install
+  ##   WORKING_DIRECTORY "${empproj_DIR}")
   include_directories(SYSTEM "${empproj_DIR}")
-  set("emp-${empproj}_DIR" "${empproj_DIR}/cmake")
-  find_package("emp-${empproj}" REQUIRED)
+  #set("emp-${empproj}_DIR" "${empproj_DIR}/cmake")
+  #find_package("emp-${empproj}" REQUIRED)
+  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empproj}")
 endforeach()
 
 

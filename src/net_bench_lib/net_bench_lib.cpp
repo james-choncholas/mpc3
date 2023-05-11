@@ -1,5 +1,7 @@
 #include <mpc3/net_bench_lib.hpp>
 
+namespace mpc3 {
+
 int factorial(int input) noexcept
 {
   int result = 1;
@@ -11,3 +13,4 @@ int factorial(int input) noexcept
 
   return result;
 }
+}// namespace mpc3
