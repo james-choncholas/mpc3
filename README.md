@@ -1,16 +1,27 @@
 # mpc3
 
 [![ci](https://github.com/james-choncholas/mpc3/actions/workflows/ci.yml/badge.svg)](https://github.com/james-choncholas/mpc3/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/james-choncholas/mpc3/branch/main/graph/badge.svg)](https://codecov.io/gh/james-choncholas/mpc3)
-[![CodeQL](https://github.com/james-choncholas/mpc3/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/james-choncholas/mpc3/actions/workflows/codeql-analysis.yml)
 
-LGTM Has to be set up manually after template is created:
+## About
+MPC Congestion Control (MPC^3) testing.
 
-[![Language grade: C++](https://img.shields.io/lgtm/grade/cpp/github/james-choncholas/mpc3)](https://lgtm.com/projects/g/james-choncholas/mpc3/context:cpp)
+## Getting Started
+Build the container yourself (optional)
+```bash
+./docker/build.sh
+```
 
-## About mpc3
+Run the sender
+```bash
+./docker/run.sh
+./mpc3/build/src/net_bench_app/net_bench_app -s -a 127.0.0.1
+```
 
-
+Run the receiver
+```bash
+./docker/run.sh
+./mpc3/build/src/net_bench_app/net_bench_app -r
+```
 
 ## More Details
 

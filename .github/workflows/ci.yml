@@ -32,7 +32,7 @@ jobs:
           - ubuntu-20.04
         compiler:
           # you can specify the version after `-` like "llvm-15.0.2".
-          # - llvm-15.0.2
+          # - llvm-15.0.2 # transputation library is not clang friendly
           - gcc-11
         generator:
           - "Ninja Multi-Config"
@@ -52,7 +52,7 @@ jobs:
             gcov_executable: gcov
             enable_ipo: On
 
-          #- compiler: llvm-15.0.2
+          #- compiler: llvm-15.0.2 # transputation library is not clang friendly
           #  enable_ipo: Off
           #  gcov_executable: "llvm-cov gcov"
 
