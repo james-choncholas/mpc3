@@ -32,8 +32,8 @@ jobs:
           - ubuntu-20.04
         compiler:
           # you can specify the version after `-` like "llvm-15.0.2".
-          # - llvm-15.0.2 transputation library not clang friendly
           - gcc-11
+          # - llvm-15.0.2 transputation library not clang friendly
         generator:
           - "Ninja Multi-Config"
         build_type:
