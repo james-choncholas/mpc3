@@ -1,6 +1,6 @@
 [submodule "extern/emp-tool"]
 	path = extern/emp-tool
-	url = git@github.com:emp-toolkit/emp-tool.git
+  url = https://github.com/emp-toolkit/emp-tool
 [submodule "extern/transputation"]
 	path = extern/transputation
-	url = git@github.com:james-choncholas/transputation.git
+  url = https://github.com/james-choncholas/transputation
