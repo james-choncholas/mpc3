@@ -38,24 +38,24 @@ long connectionThread(T *arr, size_t num_elements, const bool isSender, std::str
 {
   time_point<high_resolution_clock> tic;
   if (isSender) {
-    auto io = std::make_unique<emp::NetIO>(nullptr, port);
+    auto netio = std::make_unique<emp::NetIO>(nullptr, port);
     tic = high_resolution_clock::now();
-    io->send_data(arr, num_elements * sizeof(T));
-    io->flush();
+    netio->send_data(arr, num_elements * sizeof(T));
+    netio->flush();
   } else {
-    auto io = std::make_unique<emp::NetIO>(ipAddr.c_str(), port);
+    auto netio = std::make_unique<emp::NetIO>(ipAddr.c_str(), port);
     tic = high_resolution_clock::now();
-    io->recv_data(arr, num_elements * sizeof(T));
+    netio->recv_data(arr, num_elements * sizeof(T));
   }
 
   auto toc = high_resolution_clock::now();
-  long us = 0;
+  long micros = 0;
   if (tic > toc) {
     spdlog::error("emp timer overflowed in {}", __func__);
   } else {
-    us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
+    micros = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
   }
-  return us;
+  return micros;
 }
 
 NET_BENCH_LIB_EXPORT
@@ -65,7 +65,7 @@ void multiSocketTransfer(std::string const &ipAddr,
   std::string const &funcName,
   std::vector<T> &arr)
 {
-  size_t material_size = arr.size() * sizeof(T);
+  size_t const material_size = arr.size() * sizeof(T);
   // Now we will form as many connections to maximize the throughput
   // ceiling of (material_size / bandwidth_delay_product)
   size_t num_connections = static_cast<size_t>(ceil(static_cast<double>(material_size) / static_cast<double>(_kBDP)));
@@ -89,10 +89,10 @@ void multiSocketTransfer(std::string const &ipAddr,
     }
   }
 
-  long us =
+  long micros =
     std::accumulate(threads.begin(), threads.end(), 0, [](long sum, auto &thread) { return sum + thread.get(); });
-  spdlog::info("emp multi-socket transfer took {}", us);
-  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, us, arr.size() * sizeof(T));
+  spdlog::info("emp multi-socket transfer took {}", micros);
+  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, micros, arr.size() * sizeof(T));
 }
 
 NET_BENCH_LIB_EXPORT
@@ -102,9 +102,9 @@ void singleSocketTransfer(std::string const &ipAddr,
   std::string const &funcName,
   std::vector<T> &arr)
 {
-  auto us = connectionThread<T>(&arr[0], arr.size(), isSender, ipAddr, _kStartPort);
-  spdlog::info("emp single socket transfer took {}", us);
-  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, us, arr.size() * sizeof(T));
+  auto micros = connectionThread<T>(arr.data(), arr.size(), isSender, ipAddr, _kStartPort);
+  spdlog::info("emp single socket transfer took {}", micros);
+  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, micros, arr.size() * sizeof(T));
 }
 
 NET_BENCH_LIB_EXPORT
@@ -118,33 +118,33 @@ void transputationTransfer(std::string const &ipAddr,
 
   auto material_size = static_cast<uint32_t>(arr.size() * sizeof(T));
   auto *rawp = static_cast<uint8_t *>(static_cast<void *>(arr.data()));
-  auto t = std::unique_ptr<Transport>(Transport::GetTransport(transport.c_str()));
+  auto transp = std::unique_ptr<Transport>(Transport::GetTransport(transport.c_str()));
 
   time_point<high_resolution_clock> tic;
   if (isSender) {
-    t->SetupClient(ipAddr.c_str(), _kStartPort);
+    transp->SetupClient(ipAddr.c_str(), _kStartPort);
     const int shitsleep = 100;// Connect calls exit(1) if server not ready :(
     std::this_thread::sleep_for(std::chrono::milliseconds(shitsleep));
-    t->Connect();
+    transp->Connect();
     tic = high_resolution_clock::now();
-    t->SendRaw(material_size, rawp);
+    transp->SendRaw(material_size, rawp);
   } else {
-    t->SetupServer("0.0.0.0", _kStartPort);
-    t->Accept();
+    transp->SetupServer("0.0.0.0", _kStartPort);
+    transp->Accept();
     tic = high_resolution_clock::now();
-    t->RecvRaw(material_size, rawp);
+    transp->RecvRaw(material_size, rawp);
   }
-  t->Close();
+  transp->Close();
 
   auto toc = high_resolution_clock::now();
-  long us = 0;
+  long micros = 0;
   if (tic > toc) {
     spdlog::error("emp timer overflowed in {}", __func__);
   } else {
-    us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
+    micros = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
   }
-  spdlog::info("transputation {} transfer took {}", transport, us);
-  spdlog::get("results")->info("transputation,{},{},us,{},B,", transport, us, arr.size() * sizeof(T));
+  spdlog::info("transputation {} transfer took {}", transport, micros);
+  spdlog::get("results")->info("transputation,{},{},us,{},B,", transport, micros, arr.size() * sizeof(T));
 }
 
 NET_BENCH_LIB_EXPORT
@@ -168,12 +168,12 @@ void testTransfer(auto testFunc,
   testFunc(ipAddr, isSender, funcName, arr);
 
   if (std::any_of(arr.begin(), arr.end(), [&](T x) { return x != initValue; })) {
-    size_t i = 0;
-    for (i = 0; i < arr.size(); ++i) {
-      if (arr[i] != initValue) { break; }
+    size_t idx = 0;
+    for (idx = 0; idx < arr.size(); ++idx) {
+      if (arr[idx] != initValue) { break; }
     }
 
-    spdlog::error("first index with mismatch: arr[{}] = {}", i, arr[i]);
+    spdlog::error("first index with mismatch: arr[{}] = {}", idx, arr[idx]);
     throw std::ios_base::failure("corrupted data after transmission");
   }
 }
