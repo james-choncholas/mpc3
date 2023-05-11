@@ -8,6 +8,8 @@ target_link_libraries(net_bench_lib
     mpc3_options
     mpc3_warnings)
 
+# following libs used in hpp file (due to templating)
+# so needs public
 target_link_system_libraries(
   net_bench_lib
   PUBLIC
@@ -16,6 +18,11 @@ target_link_system_libraries(
     pthread
     fmt::fmt
     spdlog::spdlog)
+
+# need to add the directory where emp-tool.so is to the rpath
+# so linker and ldd can find it.
+get_filename_component(EMP_TOOL_LIB_DIR "${EMP-TOOL_LIBRARY}" DIRECTORY)
+target_link_directories(net_bench_lib PUBLIC "${EMP_TOOL_LIB_DIR}")
 
 target_include_directories(net_bench_lib 
   ${WARNING_GUARD}

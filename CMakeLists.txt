@@ -43,9 +43,14 @@ include_directories(SYSTEM "${TRANSPUTATION_INCLUDE_DIR}/..")
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 foreach(empproj tool)
-  set("empproj_DIR" "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empproj}")
-  include_directories(SYSTEM "${empproj_DIR}")
-  add_subdirectory("${empproj_DIR}")
+  set(emp-dir "${CMAKE_CURRENT_SOURCE_DIR}/extern/emp-${empproj}")
+  execute_process(COMMAND cmake -DENABLE_FLOAT=On -DTHREADING=On .
+    WORKING_DIRECTORY "${emp-dir}")
+  execute_process(COMMAND make -j16
+    WORKING_DIRECTORY "${emp-dir}")
+  execute_process(COMMAND sudo make install
+    WORKING_DIRECTORY "${emp-dir}")
+  find_package(emp-tool REQUIRED)
 endforeach()
 
 
@@ -108,7 +113,6 @@ include(cmake/PackageProject.cmake)
 mpc3_package_project(
   TARGETS
   net_bench_app
-  #intro
   mpc3_options
   mpc3_warnings
   # FIXME: this does not work! CK

@@ -29,13 +29,17 @@ add_test(NAME cli.has_help COMMAND net_bench_app --help)
 add_test(NAME cli.version_matches COMMAND net_bench_app --version)
 set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
 
+# emp-tool.so directory is not added to rpath for some reason
+# so need to add it here manually
+#link_directories("/usr/local/lib/")
 add_executable(tests tests.cpp)
 target_link_libraries(
   tests
-  PRIVATE mpc3::mpc3_warnings
-          mpc3::mpc3_options
-          mpc3::net_bench_lib
-          Catch2::Catch2WithMain)
+  PRIVATE
+    mpc3::net_bench_lib
+    mpc3::mpc3_options
+    mpc3::mpc3_warnings
+    Catch2::Catch2WithMain)
 
 # automatically discover tests that are defined in catch based test files you can modify the unittests. Set TEST_PREFIX
 # to whatever you want, or use different for different binaries
@@ -56,10 +60,11 @@ catch_discover_tests(
 add_executable(constexpr_tests constexpr_tests.cpp)
 target_link_libraries(
   constexpr_tests
-  PRIVATE mpc3::mpc3_warnings
-          mpc3::mpc3_options
-          mpc3::net_bench_lib
-          Catch2::Catch2WithMain)
+  PRIVATE
+    mpc3::net_bench_lib
+    mpc3::mpc3_options
+    mpc3::mpc3_warnings
+    Catch2::Catch2WithMain)
 
 catch_discover_tests(
   constexpr_tests
@@ -79,10 +84,11 @@ catch_discover_tests(
 add_executable(relaxed_constexpr_tests constexpr_tests.cpp)
 target_link_libraries(
   relaxed_constexpr_tests
-  PRIVATE mpc3::mpc3_warnings
-          mpc3::mpc3_options
-          mpc3::net_bench_lib
-          Catch2::Catch2WithMain)
+  PRIVATE
+    mpc3::net_bench_lib
+    mpc3::mpc3_options
+    mpc3::mpc3_warnings
+    Catch2::Catch2WithMain)
 target_compile_definitions(relaxed_constexpr_tests PRIVATE -DCATCH_CONFIG_RUNTIME_STATIC_REQUIRE)
 
 catch_discover_tests(
