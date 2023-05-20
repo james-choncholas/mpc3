@@ -92,7 +92,7 @@ void multiSocketTransfer(std::string const &ipAddr,
   long micros =
     std::accumulate(threads.begin(), threads.end(), 0, [](long sum, auto &thread) { return sum + thread.get(); });
   spdlog::info("emp multi-socket transfer took {}", micros);
-  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, micros, arr.size() * sizeof(T));
+  spdlog::get("results")->info("emp,{},{},{},", funcName, micros, arr.size() * sizeof(T));
 }
 
 NET_BENCH_LIB_EXPORT
@@ -104,7 +104,7 @@ void singleSocketTransfer(std::string const &ipAddr,
 {
   auto micros = connectionThread<T>(arr.data(), arr.size(), isSender, ipAddr, _kStartPort);
   spdlog::info("emp single socket transfer took {}", micros);
-  spdlog::get("results")->info("emp,{},{},us,{},B,", funcName, micros, arr.size() * sizeof(T));
+  spdlog::get("results")->info("emp,{},{},{},", funcName, micros, arr.size() * sizeof(T));
 }
 
 NET_BENCH_LIB_EXPORT
@@ -144,7 +144,7 @@ void transputationTransfer(std::string const &ipAddr,
     micros = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
   }
   spdlog::info("transputation {} transfer took {}", transport, micros);
-  spdlog::get("results")->info("transputation,{},{},us,{},B,", transport, micros, arr.size() * sizeof(T));
+  spdlog::get("results")->info("transputation,{},{},{},", transport, micros, arr.size() * sizeof(T));
 }
 
 NET_BENCH_LIB_EXPORT
@@ -155,6 +155,12 @@ void testTransfer(auto testFunc,
   std::string const &funcName,
   size_t transferSz)
 {
+  static bool logger_setup = []() {
+    spdlog::get("results")->info("transputation,test name,wall clock us,number of bytes,");
+    return true;
+  }();
+  (void)logger_setup;
+
   const T initValue = 1;
   std::vector<T> arr;
   if (isSender) {

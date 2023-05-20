@@ -34,4 +34,4 @@ ehthumbs.db
 Thumbs.db
 
 # results/logs
-**.result
+**\.result

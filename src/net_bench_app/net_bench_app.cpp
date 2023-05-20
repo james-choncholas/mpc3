@@ -66,8 +66,8 @@ int main(int argc, char **argv)
 
       for (size_t i = 1; i <= _kTransferSteps; ++i) {
         size_t const transferSz = _kTransferMin * i;
-        testTransfer<double>(multiSocketTransfer<double>, ipAddr, isSender, "empss", transferSz);
-        testTransfer<double>(singleSocketTransfer<double>, ipAddr, isSender, "empms", transferSz);
+        testTransfer<double>(multiSocketTransfer<double>, ipAddr, isSender, "empms", transferSz);
+        testTransfer<double>(singleSocketTransfer<double>, ipAddr, isSender, "empss", transferSz);
         testTransfer<double>(transputationTransfer<double>, ipAddr, isSender, "TCP", transferSz);
         testTransfer<double>(transputationTransfer<double>, ipAddr, isSender, "UDT", transferSz);
       }
