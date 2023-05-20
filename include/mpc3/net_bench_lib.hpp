@@ -123,8 +123,6 @@ void transputationTransfer(std::string const &ipAddr,
   time_point<high_resolution_clock> tic;
   if (isSender) {
     transp->SetupClient(ipAddr.c_str(), _kStartPort);
-    const int shitsleep = 100;// Connect calls exit(1) if server not ready :(
-    std::this_thread::sleep_for(std::chrono::milliseconds(shitsleep));
     transp->Connect();
     tic = high_resolution_clock::now();
     transp->SendRaw(material_size, rawp);
